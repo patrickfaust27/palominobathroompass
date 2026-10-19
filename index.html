@@ -2,353 +2,636 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Palomino Hall Pass System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase App & Database SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans pb-12">
 
-  <!-- Header & Navigation -->
-  <header class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">Palomino Hall Pass System</h1>
-        <p id="current-time-display" class="text-indigo-200 text-sm">Loading clock...</p>
+  <!-- Header -->
+  <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="text-2xl">🚪</span>
+        <h1 class="text-xl font-bold tracking-wide">Palomino Hall Pass System</h1>
       </div>
-      <div class="flex gap-2">
-        <button id="nav-kiosk" onclick="switchTab('kiosk')" class="px-4 py-2 rounded-lg font-semibold bg-white text-indigo-700 shadow">
-          Pass Kiosk
-        </button>
-        <button id="nav-analytics" onclick="switchTab('analytics')" class="px-4 py-2 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition">
-          Analytics
-        </button>
+      
+      <!-- Tab Navigation & Header Controls -->
+      <div class="flex items-center gap-3 text-sm flex-wrap">
+        <div class="flex bg-indigo-900/60 p-1 rounded-xl border border-indigo-500">
+          <button id="navKiosk" onclick="switchTab('kiosk')" class="px-3 py-1 rounded-lg font-bold text-xs bg-white text-indigo-700 shadow">
+            Pass Kiosk
+          </button>
+          <button id="navAnalytics" onclick="switchTab('analytics')" class="px-3 py-1 rounded-lg font-bold text-xs text-indigo-200 hover:text-white transition">
+            Analytics
+          </button>
+        </div>
+
+        <div class="bg-indigo-800/80 px-3 py-1.5 rounded-lg border border-indigo-500">
+          <label class="text-indigo-200 text-xs font-semibold block">Teacher Tab</label>
+          <select id="teacherSelect" class="bg-transparent font-bold focus:outline-none cursor-pointer">
+            <option value="Williams" class="text-black">Williams</option>
+            <option value="Jensen" class="text-black">Jensen</option>
+            <option value="Faust" class="text-black">Faust</option>
+            <option value="Manthey" class="text-black">Manthey</option>
+            <option value="Sommers" class="text-black">Sommers</option>
+          </select>
+        </div>
+
+        <div class="bg-indigo-800/80 px-3 py-1.5 rounded-lg border border-indigo-500">
+          <label class="text-indigo-200 text-xs font-semibold block">Active Period</label>
+          <span id="currentPeriodDisplay" class="font-bold text-amber-300">Detecting...</span>
+        </div>
+
+        <div class="bg-indigo-800/80 px-3 py-1.5 rounded-lg border border-indigo-500">
+          <label class="text-indigo-200 text-xs font-semibold block">Current Time</label>
+          <span id="clock" class="font-mono text-indigo-100">--:--:--</span>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto p-4 sm:p-6">
+  <main class="max-w-7xl mx-auto px-4 mt-6">
     
     <!-- VIEW 1: PASS KIOSK -->
-    <div id="view-kiosk">
-      <!-- Active Passes Banner -->
-      <section class="mb-8 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
-          <span class="inline-block w-3 h-3 bg-green-500 rounded-full animate-ping"></span>
-          Students Currently Out in the Hall
-        </h2>
-        <div id="active-passes-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <p class="text-slate-500 italic col-span-full">No students are currently out.</p>
-        </div>
-      </section>
+    <div id="viewKiosk" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- Period Selection & Roster -->
-      <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-          <h2 class="text-xl font-bold text-slate-800">Class Roster</h2>
-          <div class="flex gap-2" id="period-buttons">
-            <!-- Dynamically generated period buttons -->
+      <!-- Left Column: Active Passes & Blocked Pairs -->
+      <section class="space-y-6">
+        
+        <!-- Active Out Passes -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Currently Out in Hallway
+            </h2>
+            <span id="activePassCount" class="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full text-xs">0 Active</span>
+          </div>
+
+          <div id="activePassesList" class="space-y-3">
+            <p class="text-slate-400 text-sm italic py-4 text-center">No students currently out in hallway.</p>
           </div>
         </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-200 text-slate-500 text-sm">
-                <th class="py-3 px-4">Student Name</th>
-                <th class="py-3 px-4">Passes Remaining</th>
-                <th class="py-3 px-4">Status</th>
-                <th class="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="roster-table-body" class="divide-y divide-slate-100">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
+        <!-- Student Conflict Pair Blocking Management -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <h2 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <span>🚫</span> Student Block Rules (Pairs)
+          </h2>
+          <p class="text-xs text-slate-500 mb-3">If Student A is out, Student B will be automatically prevented from signing out (and vice versa).</p>
+
+          <form id="addBlockForm" class="space-y-2 mb-4">
+            <input type="text" id="blockStudentA" placeholder="Student 1 Full Name" required class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <input type="text" id="blockStudentB" placeholder="Student 2 Full Name" required class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold py-2 rounded-lg transition">Add Conflict Pair</button>
+          </form>
+
+          <div id="blockRulesList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+            <p class="text-slate-400 text-xs italic">No block rules configured.</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Student Roster & Pass Management -->
+      <section class="lg:col-span-2 space-y-6">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <h2 class="text-xl font-bold text-slate-800">Classroom Roster</h2>
+              <p id="rosterSubtitle" class="text-xs text-slate-500">Filter by period to manage passes.</p>
+            </div>
+
+            <div class="flex items-center gap-3 flex-wrap">
+              <select id="periodFilter" class="text-sm font-semibold p-2 border rounded-lg bg-slate-50 text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="all">Show All Periods</option>
+                <option value="auto">Auto-Sync with Clock</option>
+                <option value="1">Period 1</option>
+                <option value="2">Period 2</option>
+                <option value="3">Period 3</option>
+                <option value="4" selected>Period 4</option>
+                <option value="5">Period 5</option>
+                <option value="6">Period 6</option>
+              </select>
+
+              <input type="text" id="searchRoster" placeholder="Search name..." class="text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none w-36 sm:w-48">
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b">
+                <tr>
+                  <th class="py-3 px-3">Student Name</th>
+                  <th class="py-3 px-3">Period</th>
+                  <th class="py-3 px-3 text-center">Passes Left</th>
+                  <th class="py-3 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rosterTableBody" class="divide-y divide-slate-100">
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
+
     </div>
 
     <!-- VIEW 2: ANALYTICS -->
-    <div id="view-analytics" class="hidden">
-      <!-- Summary Metrics -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-          <p class="text-sm font-medium text-slate-500">Total Hall Trips</p>
-          <p id="stat-total-trips" class="text-3xl font-extrabold text-indigo-600 mt-1">0</p>
+    <div id="viewAnalytics" class="hidden space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Completed Trips</p>
+          <p id="statTotalTrips" class="text-3xl font-extrabold text-indigo-600 mt-1">0</p>
         </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-          <p class="text-sm font-medium text-slate-500">Average Break Time</p>
-          <p id="stat-avg-time" class="text-3xl font-extrabold text-indigo-600 mt-1">0m 0s</p>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Average Trip Duration</p>
+          <p id="statAvgTime" class="text-3xl font-extrabold text-indigo-600 mt-1">0m 0s</p>
         </div>
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 text-center">
-          <p class="text-sm font-medium text-slate-500">Total Time Out (Classroom)</p>
-          <p id="stat-total-time" class="text-3xl font-extrabold text-indigo-600 mt-1">0m</p>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Cumulative Time Out</p>
+          <p id="statTotalTime" class="text-3xl font-extrabold text-indigo-600 mt-1">0m</p>
         </div>
       </div>
 
-      <!-- Student Breakdown Table -->
-      <section class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-        <h2 class="text-xl font-bold mb-4 text-slate-800">Student Hall Pass Analytics</h2>
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-800 mb-4">Student Hall Pass Analytics</h2>
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-slate-200 text-slate-500 text-sm">
-                <th class="py-3 px-4">Student Name</th>
-                <th class="py-3 px-4">Completed Trips</th>
-                <th class="py-3 px-4">Average Time per Trip</th>
-                <th class="py-3 px-4 text-right">Total Time Out</th>
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b">
+              <tr>
+                <th class="py-3 px-3">Student Name</th>
+                <th class="py-3 px-3">Teacher / Period</th>
+                <th class="py-3 px-3 text-center">Trips Taken</th>
+                <th class="py-3 px-3 text-center">Avg Time / Trip</th>
+                <th class="py-3 px-3 text-right">Total Minutes Out</th>
               </tr>
             </thead>
-            <tbody id="analytics-table-body" class="divide-y divide-slate-100">
-              <!-- Dynamically populated -->
+            <tbody id="analyticsTableBody" class="divide-y divide-slate-100">
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
     </div>
 
   </main>
 
-  <script>
-    // --- 1. FIREBASE CONFIGURATION ---
+  <!-- Firebase Web SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // Your Palomino Bathroom Passes Firebase Config
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyDhf9vU1XQxQHwdRZfWrxI8S8oraQviHAE",
+      authDomain: "palomino-bathroom-passes.firebaseapp.com",
+      databaseURL: "https://palomino-bathroom-passes-default-rtdb.firebaseio.com",
+      projectId: "palomino-bathroom-passes",
+      storageBucket: "palomino-bathroom-passes.firebasestorage.app",
+      messagingSenderId: "172368730685",
+      appId: "1:172368730685:web:2e3372ce858120168de854",
+      measurementId: "G-5JLNXN9R3Q"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const stateRef = ref(db, 'hallpass_state');
 
-    // --- 2. ROSTER DATA ---
-    const rosters = {
-      "Period 1": ["Alex Johnson", "Brianna Smith", "Charlie Davis", "Daniel Lee"],
-      "Period 2": ["Emma Watson", "Frank Miller", "Grace Hopper", "Henry Ford"],
-      "Period 3": ["Isabella Cruz", "Jack Ryan", "Kate Upton", "Liam Neeson"]
-    };
+    let liveData = { passes: {}, blocks: {}, adjustments: {}, history: {} };
 
-    let activePeriod = "Period 1";
-    let state = {
-      activePasses: {}, // { studentName: timestampOut }
-      adjustments: {},  // { studentName: passDelta }
-      history: {}       // { id: { student, durationSec, timestamp } }
-    };
-
-    // --- 3. TAB SWITCHING ---
-    function switchTab(tab) {
-      const kioskView = document.getElementById('view-kiosk');
-      const analyticsView = document.getElementById('view-analytics');
-      const btnKiosk = document.getElementById('nav-kiosk');
-      const btnAnalytics = document.getElementById('nav-analytics');
-
-      if (tab === 'kiosk') {
-        kioskView.classList.remove('hidden');
-        analyticsView.classList.add('hidden');
-        btnKiosk.className = "px-4 py-2 rounded-lg font-semibold bg-white text-indigo-700 shadow";
-        btnAnalytics.className = "px-4 py-2 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition";
-      } else {
-        kioskView.classList.add('hidden');
-        analyticsView.classList.remove('hidden');
-        btnAnalytics.className = "px-4 py-2 rounded-lg font-semibold bg-white text-indigo-700 shadow";
-        btnKiosk.className = "px-4 py-2 rounded-lg font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition";
-        renderAnalytics();
-      }
-    }
-
-    // --- 4. REALTIME DATABASE SYNC ---
-    db.ref("hallpass_state").on("value", (snapshot) => {
-      const val = snapshot.val() || {};
-      state.activePasses = val.activePasses || {};
-      state.adjustments = val.adjustments || {};
-      state.history = val.history || {};
-      renderRoster();
-      renderActivePasses();
-      renderAnalytics();
+    // Real-time listener: instantly syncs across devices
+    onValue(stateRef, (snapshot) => {
+      const data = snapshot.val();
+      liveData = {
+        passes: (data && data.passes) || {},
+        blocks: (data && data.blocks) || {},
+        adjustments: (data && data.adjustments) || {},
+        history: (data && data.history) || {}
+      };
+      renderUI();
     });
 
-    // --- 5. RENDER FUNCTIONS ---
-    function renderPeriodButtons() {
-      const container = document.getElementById('period-buttons');
-      container.innerHTML = '';
-      Object.keys(rosters).forEach(p => {
-        const btn = document.createElement('button');
-        btn.textContent = p;
-        btn.className = `px-3 py-1.5 rounded-lg text-sm font-semibold transition ${
-          p === activePeriod ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-        }`;
-        btn.onclick = () => { activePeriod = p; renderPeriodButtons(); renderRoster(); };
-        container.appendChild(btn);
-      });
+    function saveToCloud() {
+      set(stateRef, liveData);
     }
 
-    function renderRoster() {
-      const tbody = document.getElementById('roster-table-body');
-      tbody.innerHTML = '';
-      const list = rosters[activePeriod] || [];
+    const SCHEDULE = {
+      m_th: [
+        { period: 1, start: "07:55", end: "08:25" },
+        { period: 2, start: "08:28", end: "09:18" },
+        { period: 3, start: "09:21", end: "10:11" },
+        { period: 4, start: "10:14", end: "11:04" },
+        { period: 5, start: "11:48", end: "12:38" },
+        { period: 6, start: "12:41", end: "13:30" }
+      ],
+      fri: [
+        { period: 2, start: "08:40", end: "09:30" },
+        { period: 3, start: "09:33", end: "10:21" },
+        { period: 4, start: "10:24", end: "11:12" },
+        { period: 5, start: "11:55", end: "12:43" },
+        { period: 6, start: "12:46", end: "13:34" }
+      ]
+    };
 
-      list.forEach(name => {
-        const isOut = !!state.activePasses[name];
-        const extra = state.adjustments[name] || 0;
-        
-        // Calculate completed passes from history
-        let completed = 0;
-        Object.values(state.history).forEach(h => {
-          if (h.student === name) completed++;
-        });
+    let currentTeacher = "Williams";
+    let activePeriod = 1;
 
-        const remaining = Math.max(0, 5 + extra - completed);
+    const RAW_ROSTER = {
+      Williams: [
+        [1, "Allen, Ainsley", "Bolton, Lucas", "Burgin, Abigail", "Carrola Canizales, Nicole", "Chapman, Raiden", "Daniels, Owen", "Duenas, Wesley", "Gavin, Conor", "Gutierrez, Vida", "Hackmeyer, Charlotte", "Hazen, Brooke", "Jackson, Jameson", "Ko, Zu", "Lilly, Joshua", "Linehan, Declan", "Nunez Soto Martinez, Romeo", "Ott, Aspen", "Rios Law, Deysi", "Rollin, Lily", "Schrader, Tristan", "Silva, Carter", "Simonov, Elijah", "Smith, Melanie", "Weber, Leila", "Wilson, Hope", "Wilson, Sienna", "Zielaskowski, Hannah"],
+        [2, "Bliesmer, Dawson", "Brown, Joslyn", "Burgin, Abigail", "Cardon, Leah", "Chavez, Brady", "Dragomir, Leonard", "Fitzsimmons, George", "Gladu, Judith", "Golden, Bella", "Gutierrez, Vida", "Hazen, Brooke", "Johnson, Julia", "Knox, Kash", "Ko, Zu", "Lopez, Kara", "Mehreteab, Delina", "Merto, Brandon", "Miedema, Jackson", "Randall, Mason", "Rollin, Lily", "Salamea, Jordi", "Schlender, Cayleigh", "Smith, Melanie", "Steinke, Stella", "Taylor, Allie", "Wair, Quinn", "West, Madalyn"],
+        [3, "Barrow, Amos", "Bautista, Kensington", "Bird, Miles", "Bridgewater, Zakiya", "Camp, Vanessa", "Cauzza, Ellie", "Daniels, Owen", "Duenas, Wesley", "Froehlich, Dakota", "Halstead, Nadia", "Hammond, Harper", "Imig, Addison", "Jennings, James", "Johnson, Johnny", "Karloff, Quinn", "Lee, Kate", "Lee, Olivia", "Meiers, Troy", "Minton, Harper", "Sherman, Luke", "Van Abel, Reagan", "Watts, Bridger", "Weber, Leila", "Wilks, Alura", "Wright, Amelia"],
+        [4, "Abusway, Malek", "Albrecht, Silas", "Bolton, Lucas", "Detro, Eliza", "Ford, Sienna", "Fronapfel, Andrew", "Hooks, Jentri", "Hynson, Delaney", "Jackson, Elias", "Jackson, Jameson", "Jiang, Melody", "Keeney, Jordyn", "Landrigan, Lincoln", "Linehan, Declan", "Makengo Ndaya, Shiloh", "Martinez, Madelynn", "Natividad, Oryon", "Nunez Soto Martinez, Romeo", "Runyon, Katherine", "Scaff, Braden", "Seibert, Cameron", "Simao, Eli", "Starinieri, Angelo", "Stoller, Elliana", "Zielaskowski, Hannah"],
+        [5, "Allen, Ainsley", "Beller, Lucy", "Brown, Elijah", "Brown, Wyatt", "Donnelly, Nathan", "Fisher, Connor", "Haber, Camilla", "Hackmeyer, Charlotte", "Houseman, Dylan", "Huber, Raylan", "Jones, Owen", "Lilly, Joshua", "Loiseau, Katherine", "McClanahan, Eric", "McConnell, Mallory", "Nickelson, Aleksander", "Ott, Aspen", "Patrick, Ciaran", "Pineda Alas, Eduardo", "Ramirez, Evan", "Ray Saelee, Amelia", "Rios Law, Deysi", "Roberts, Justin", "Thompson, Lucas", "Turmel, Ella", "Uffens, Eli", "Ward, Grady"],
+        [6, "Wilson, Sienna", "Abubakar, Awal", "Allen, Elizabeth", "Carew, Patrick", "Carrola Canizales, Nicole", "Casey, Miles", "Chapman, Raiden", "Cohrs, Travis", "Collins, Hunter", "Dahlberg, Luna", "Dillman, Rowan", "Duran, Taylor", "Franco, Eevan", "Gavin, Conor", "Harrison, Charles", "Hillier, Hallie", "Knight, Owen", "Licona, Ariella", "Long, Addison", "Matson, Warren", "Michaud, Harper", "Montano, Journey", "Schrader, Tristan", "Scott, Shiva", "Silva, Carter", "Simonov, Elijah", "Snyders, Mason", "Wilson, Hope"]
+      ],
+      Jensen: [
+        [1, "Abusway, Malek", "Barrow, Amos", "Camp, Vanessa", "Casey, Miles", "Cauzza, Ellie", "Dahlberg, Luna", "Donnelly, Nathan", "Dragomir, Leonard", "Gladu, Judith", "Imig, Addison", "Lee, Olivia", "Licona, Ariella", "Merto, Brandon", "Miedema, Jackson", "Nickelson, Aleksander", "Pineda Alas, Eduardo", "Ramirez, Evan", "Randall, Mason", "Ray Saelee, Amelia", "Runyon, Katherine", "Salamea, Jordi", "Taylor, Allie", "Thompson, Lucas", "Uffens, Eli", "West, Madalyn", "Wright, Amelia"],
+        [2, "Beller, Lucy", "Brown, Elijah", "Cauzza, Ellie", "Cohrs, Travis", "Collins, Hunter", "Dillman, Rowan", "Halstead, Nadia", "Harrison, Charles", "Landrigan, Lincoln", "Linehan, Declan", "Loiseau, Katherine", "Long, Addison", "Roberts, Justin", "Runyon, Katherine", "Sargent, Breckston", "Scaff, Braden", "Snyders, Mason", "Thompson, Lucas", "Van Abel, Reagan", "Weber, Leila", "Wilson, Hope"],
+        [3, "Abusway, Malek", "Albrecht, Silas", "Allen, Elizabeth", "Bolton, Lucas", "Cardon, Leah", "Casey, Miles", "Chapman, Raiden", "Detro, Eliza", "Dragomir, Leonard", "Hackmeyer, Charlotte", "Huber, Raylan", "Jiang, Melody", "Knight, Owen", "Makengo Ndaya, Shiloh", "McClanahan, Eric", "McConnell, Mallory", "Michaud, Harper", "Miedema, Jackson", "Natividad, Oryon", "Ray Saelee, Amelia", "Rios Law, Deysi", "Salamea, Jordi", "Schlender, Cayleigh", "Scott, Shiva", "Seibert, Cameron", "Simao, Eli", "Turmel, Ella", "Uffens, Eli"],
+        [4, "Barrow, Amos", "Burgin, Abigail", "Chavez, Brady", "Dahlberg, Luna", "Daniels, Owen", "Donnelly, Nathan", "Fisher, Connor", "Golden, Bella", "Haber, Camilla", "Hazen, Brooke", "Houseman, Dylan", "Imig, Addison", "Johnson, Julia", "Karloff, Quinn", "Knox, Kash", "Licona, Ariella", "Lilly, Joshua", "Matson, Warren", "Meiers, Troy", "Montano, Journey", "Ott, Aspen", "Silva, Carter", "Simonov, Elijah", "Steinke, Stella", "Ward, Grady", "West, Madalyn", "Wilson, Sienna"],
+        [5, "Abubakar, Awal", "Bautista, Kensington", "Bird, Miles", "Carrola Canizales, Nicole", "Duenas, Wesley", "Franco, Eevan", "Fronapfel, Andrew", "Gavin, Conor", "Gutierrez, Vida", "Hillier, Hallie", "Hooks, Jentri", "Jennings, James", "Johnson, Johnny", "Lopez, Kara", "Martinez, Madelynn", "Mehreteab, Delina", "Merto, Brandon", "Minton, Harper", "Rollin, Lily", "Schrader, Tristan", "Smith, Melanie", "Stoller, Elliana", "Taylor, Allie", "Wair, Quinn", "Watts, Bridger", "Wilks, Alura", "Zielaskowski, Hannah"],
+        [6, "Allen, Ainsley", "Bliesmer, Dawson", "Bridgewater, Zakiya", "Brown, Joslyn", "Brown, Wyatt", "Camp, Vanessa", "Fitzsimmons, George", "Ford, Sienna", "Froehlich, Dakota", "Gladu, Judith", "Hammond, Harper", "Hynson, Delaney", "Jackson, Elias", "Jackson, Jameson", "Jones, Owen", "Keeney, Jordyn", "Ko, Zu", "Lee, Kate", "Lee, Olivia", "Nunez Soto Martinez, Romeo", "Patrick, Ciaran", "Randall, Mason", "Sherman, Luke", "Starinieri, Angelo", "Wright, Amelia"]
+      ],
+      Faust: [
+        [1, "Beller, Lucy", "Bliesmer, Dawson", "Bridgewater, Zakiya", "Brown, Elijah", "Cardon, Leah", "Detro, Eliza", "Duran, Taylor", "Ford, Sienna", "Fronapfel, Andrew", "Golden, Bella", "Hammond, Harper", "Huber, Raylan", "Jennings, James", "Johnson, Johnny", "Knight, Owen", "Knox, Kash", "Landrigan, Lincoln", "Martinez, Madelynn", "McClanahan, Eric", "McConnell, Mallory", "Mehreteab, Delina", "Natividad, Oryon", "Roberts, Justin", "Scott, Shiva", "Starinieri, Angelo", "Ward, Grady"],
+        [2, "Abusway, Malek", "Bautista, Kensington", "Bird, Miles", "Fronapfel, Andrew", "Hackmeyer, Charlotte", "Houseman, Dylan", "Imig, Addison", "Jennings, James", "Jiang, Melody", "Johnson, Johnny", "Karloff, Quinn", "Knight, Owen", "Licona, Ariella", "Makengo Ndaya, Shiloh", "Matson, Warren", "Michaud, Harper", "Minton, Harper", "Nunez Soto Martinez, Romeo", "Ray Saelee, Amelia", "Seibert, Cameron", "Stoller, Elliana", "Turmel, Ella", "Uffens, Eli", "Watts, Bridger", "Wilks, Alura"],
+        [3, "Abubakar, Awal", "Carrola Canizales, Nicole", "Chavez, Brady", "Donnelly, Nathan", "Haber, Camilla", "Hooks, Jentri", "Jackson, Jameson", "Jones, Owen", "Keeney, Jordyn", "Lopez, Kara", "Martinez, Madelynn", "Merto, Brandon", "Montano, Journey", "Ott, Aspen", "Pineda Alas, Eduardo", "Randall, Mason", "Schrader, Tristan", "Silva, Carter", "Simonov, Elijah", "Smith, Melanie", "Ward, Grady"],
+        [4, "Allen, Ainsley", "Allen, Elizabeth", "Beller, Lucy", "Bridgewater, Zakiya", "Brown, Elijah", "Brown, Wyatt", "Cardon, Leah", "Cauzza, Ellie", "Cohrs, Travis", "Dillman, Rowan", "Franco, Eevan", "Gavin, Conor", "Gutierrez, Vida", "Halstead, Nadia", "Hammond, Harper", "Harrison, Charles", "Hillier, Hallie", "Lee, Olivia", "Loiseau, Katherine", "McClanahan, Eric", "McConnell, Mallory", "Patrick, Ciaran", "Roberts, Justin", "Scott, Shiva", "Sherman, Luke", "Snyders, Mason", "Taylor, Allie", "Thompson, Lucas", "Van Abel, Reagan", "Wilson, Hope"],
+        [5, "Bliesmer, Dawson", "Bolton, Lucas", "Brown, Joslyn", "Camp, Vanessa", "Casey, Miles", "Chapman, Raiden", "Collins, Hunter", "Dahlberg, Luna", "Fitzsimmons, George", "Ford, Sienna", "Froehlich, Dakota", "Gladu, Judith", "Golden, Bella", "Hynson, Delaney", "Jackson, Elias", "Ko, Zu", "Landrigan, Lincoln", "Lee, Kate", "Linehan, Declan", "Long, Addison", "Runyon, Katherine", "Scaff, Braden", "Schlender, Cayleigh", "Simao, Eli", "Starinieri, Angelo", "Weber, Leila", "West, Madalyn", "Wright, Amelia"],
+        [6, "Albrecht, Silas", "Barrow, Amos", "Burgin, Abigail", "Daniels, Owen", "Detro, Eliza", "Dragomir, Leonard", "Duenas, Wesley", "Fisher, Connor", "Hazen, Brooke", "Huber, Raylan", "Johnson, Julia", "Lilly, Joshua", "Mehreteab, Delina", "Meiers, Troy", "Miedema, Jackson", "Natividad, Oryon", "Rios Law, Deysi", "Rollin, Lily", "Salamea, Jordi", "Steinke, Stella", "Wair, Quinn", "Wilson, Sienna", "Zielaskowski, Hannah"]
+      ],
+      Manthey: [
+        [1, "Abubakar, Awal", "Bautista, Kensington", "Bird, Miles", "Chavez, Brady", "Fisher, Connor", "Fitzsimmons, George", "Haber, Camilla", "Halstead, Nadia", "Houseman, Dylan", "Jiang, Melody", "Jones, Owen", "Karloff, Quinn", "Keeney, Jordyn", "Lee, Kate", "Loiseau, Katherine", "Long, Addison", "Meiers, Troy", "Michaud, Harper", "Patrick, Ciaran", "Schlender, Cayleigh", "Seibert, Cameron", "Sherman, Luke", "Snyders, Mason", "Steinke, Stella", "Van Abel, Reagan", "Wilber, Andrew", "Wilks, Alura"],
+        [2, "Allen, Elizabeth", "Barrow, Amos", "Brown, Wyatt", "Camp, Vanessa", "Carrola Canizales, Nicole", "Chapman, Raiden", "Fisher, Connor", "Ford, Sienna", "Franco, Eevan", "Froehlich, Dakota", "Haber, Camilla", "Hammond, Harper", "Huber, Raylan", "Hynson, Delaney", "Jones, Owen", "Lee, Kate", "Lee, Olivia", "McClanahan, Eric", "Montano, Journey", "Patrick, Ciaran", "Schrader, Tristan", "Scott, Shiva", "Sherman, Luke", "Simonov, Elijah", "Ward, Grady", "Wilson, Sienna", "Wright, Amelia"],
+        [3, "Allen, Ainsley", "Brown, Joslyn", "Burgin, Abigail", "Collins, Hunter", "Dahlberg, Luna", "Dillman, Rowan", "Gavin, Conor", "Gladu, Judith", "Harrison, Charles", "Hazen, Brooke", "Hillier, Hallie", "Houseman, Dylan", "Jackson, Elias", "Johnson, Julia", "Lilly, Joshua", "Linehan, Declan", "Loiseau, Katherine", "Matson, Warren", "Nunez Soto Martinez, Romeo", "Runyon, Katherine", "Snyders, Mason", "Starinieri, Angelo", "Steinke, Stella", "Thompson, Lucas", "Wair, Quinn", "West, Madalyn", "Zielaskowski, Hannah"],
+        [4, "Abubakar, Awal", "Bautista, Kensington", "Bliesmer, Dawson", "Casey, Miles", "Dragomir, Leonard", "Duenas, Wesley", "Fitzsimmons, George", "Johnson, Johnny", "Ko, Zu", "Long, Addison", "Mehreteab, Delina", "Merto, Brandon", "Michaud, Harper", "Miedema, Jackson", "Minton, Harper", "Ramirez, Evan", "Randall, Mason", "Rios Law, Deysi", "Rollin, Lily", "Salamea, Jordi", "Uffens, Eli", "Watts, Bridger", "Weber, Leila", "Wilks, Alura"],
+        [5, "Abusway, Malek", "Albrecht, Silas", "Bridgewater, Zakiya", "Cardon, Leah", "Carew, Patrick", "Cauzza, Ellie", "Cohrs, Travis", "Daniels, Owen", "Detro, Eliza", "Duran, Taylor", "Jackson, Jameson", "Jiang, Melody", "Karloff, Quinn", "Keeney, Jordyn", "Knight, Owen", "Knox, Kash", "Licona, Ariella", "Makengo Ndaya, Shiloh", "Meiers, Troy", "Natividad, Oryon", "Seibert, Cameron", "Silva, Carter", "Van Abel, Reagan", "Wilber, Andrew", "Wilson, Hope"],
+        [6, "Beller, Lucy", "Bird, Miles", "Bolton, Lucas", "Brown, Elijah", "Chavez, Brady", "Donnelly, Nathan", "Fronapfel, Andrew", "Golden, Bella", "Gutierrez, Vida", "Hackmeyer, Charlotte", "Halstead, Nadia", "Hooks, Jentri", "Imig, Addison", "Jennings, James", "Landrigan, Lincoln", "Lopez, Kara", "Martinez, Madelynn", "McConnell, Mallory", "Nickelson, Aleksander", "Ott, Aspen", "Pineda Alas, Eduardo", "Ray Saelee, Amelia", "Roberts, Justin", "Scaff, Braden", "Schlender, Cayleigh", "Simao, Eli", "Smith, Melanie", "Stoller, Elliana", "Taylor, Allie", "Turmel, Ella"]
+      ],
+      Sommers: [
+        [1, "Albrecht, Silas", "Allen, Elizabeth", "Brown, Joslyn", "Brown, Wyatt", "Carew, Patrick", "Cohrs, Travis", "Collins, Hunter", "Dillman, Rowan", "Franco, Eevan", "Froehlich, Dakota", "Harrison, Charles", "Hillier, Hallie", "Hooks, Jentri", "Hynson, Delaney", "Jackson, Elias", "Johnson, Julia", "Lopez, Kara", "Makengo Ndaya, Shiloh", "Matson, Warren", "Minton, Harper", "Montano, Journey", "Scaff, Braden", "Simao, Eli", "Stoller, Elliana", "Turmel, Ella", "Wair, Quinn", "Watts, Bridger"],
+        [2, "Abubakar, Awal", "Albrecht, Silas", "Allen, Ainsley", "Bolton, Lucas", "Bridgewater, Zakiya", "Casey, Miles", "Dahlberg, Luna", "Daniels, Owen", "Detro, Eliza", "Donnelly, Nathan", "Duenas, Wesley", "Gavin, Conor", "Hillier, Hallie", "Hooks, Jentri", "Jackson, Elias", "Jackson, Jameson", "Keeney, Jordyn", "Lilly, Joshua", "Martinez, Madelynn", "McConnell, Mallory", "Meiers, Troy", "Natividad, Oryon", "Ott, Aspen", "Rios Law, Deysi", "Silva, Carter", "Simao, Eli", "Starinieri, Angelo", "Zielaskowski, Hannah"],
+        [3, "Beller, Lucy", "Bliesmer, Dawson", "Brown, Elijah", "Brown, Wyatt", "Cohrs, Travis", "Fisher, Connor", "Fitzsimmons, George", "Ford, Sienna", "Franco, Eevan", "Fronapfel, Andrew", "Golden, Bella", "Gutierrez, Vida", "Hynson, Delaney", "Ko, Zu", "Landrigan, Lincoln", "Licona, Ariella", "Long, Addison", "Mehreteab, Delina", "Patrick, Ciaran", "Roberts, Justin", "Rollin, Lily", "Scaff, Braden", "Stoller, Elliana", "Taylor, Allie", "Wilson, Hope", "Wilson, Sienna"],
+        [4, "Bird, Miles", "Brown, Joslyn", "Camp, Vanessa", "Carew, Patrick", "Carrola Canizales, Nicole", "Chapman, Raiden", "Collins, Hunter", "Duran, Taylor", "Froehlich, Dakota", "Gladu, Judith", "Hackmeyer, Charlotte", "Huber, Raylan", "Jennings, James", "Jones, Owen", "Knight, Owen", "Lee, Kate", "Lopez, Kara", "Nickelson, Aleksander", "Pineda Alas, Eduardo", "Ray Saelee, Amelia", "Schlender, Cayleigh", "Schrader, Tristan", "Smith, Melanie", "Turmel, Ella", "Wair, Quinn", "Wilber, Andrew", "Wright, Amelia"],
+        [5, "Allen, Elizabeth", "Barrow, Amos", "Burgin, Abigail", "Chavez, Brady", "Dillman, Rowan", "Dragomir, Leonard", "Halstead, Nadia", "Hammond, Harper", "Harrison, Charles", "Hazen, Brooke", "Imig, Addison", "Johnson, Julia", "Lee, Olivia", "Matson, Warren", "Michaud, Harper", "Miedema, Jackson", "Montano, Journey", "Nunez Soto Martinez, Romeo", "Randall, Mason", "Salamea, Jordi", "Scott, Shiva", "Sherman, Luke", "Simonov, Elijah", "Snyders, Mason", "Steinke, Stella"],
+        [6, "Abusway, Malek", "Bautista, Kensington", "Cardon, Leah", "Cauzza, Ellie", "Haber, Camilla", "Houseman, Dylan", "Jiang, Melody", "Johnson, Johnny", "Karloff, Quinn", "Knox, Kash", "Linehan, Declan", "Loiseau, Katherine", "Makengo Ndaya, Shiloh", "McClanahan, Eric", "Merto, Brandon", "Minton, Harper", "Ramirez, Evan", "Runyon, Katherine", "Seibert, Cameron", "Thompson, Lucas", "Uffens, Eli", "Van Abel, Reagan", "Ward, Grady", "Watts, Bridger", "Weber, Leila", "West, Madalyn", "Wilks, Alura"]
+      ]
+    };
 
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition";
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-slate-800">${name}</td>
-          <td class="py-3 px-4">
-            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-              remaining > 1 ? 'bg-slate-100 text-slate-700' : 'bg-amber-100 text-amber-800'
-            }">${remaining} / 5</span>
-          </td>
-          <td class="py-3 px-4">
-            ${isOut 
-              ? '<span class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full"><span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span> Out in Hall</span>'
-              : '<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">In Class</span>'
-            }
-          </td>
-          <td class="py-3 px-4 text-right">
-            ${isOut
-              ? `<button onclick="signIn('${name}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-md shadow transition">Sign In</button>`
-              : `<button onclick="signOut('${name}')" ${remaining === 0 ? 'disabled' : ''} class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-xs font-bold rounded-md shadow transition">Sign Out</button>`
-            }
-          </td>
-        `;
-        tbody.appendChild(tr);
+    const MASTER_ROSTER = {};
+    Object.keys(RAW_ROSTER).forEach(teacher => {
+      MASTER_ROSTER[teacher] = [];
+      RAW_ROSTER[teacher].forEach(periodGroup => {
+        const periodNum = periodGroup[0];
+        for (let i = 1; i < periodGroup.length; i++) {
+          MASTER_ROSTER[teacher].push({ name: periodGroup[i], period: periodNum });
+        }
       });
+    });
+
+    // --- TAB SWITCHING ---
+    window.switchTab = function(tab) {
+      const viewKiosk = document.getElementById('viewKiosk');
+      const viewAnalytics = document.getElementById('viewAnalytics');
+      const navKiosk = document.getElementById('navKiosk');
+      const navAnalytics = document.getElementById('navAnalytics');
+
+      if (tab === 'kiosk') {
+        viewKiosk.classList.remove('hidden');
+        viewAnalytics.classList.add('hidden');
+        navKiosk.className = "px-3 py-1 rounded-lg font-bold text-xs bg-white text-indigo-700 shadow";
+        navAnalytics.className = "px-3 py-1 rounded-lg font-bold text-xs text-indigo-200 hover:text-white transition";
+      } else {
+        viewKiosk.classList.add('hidden');
+        viewAnalytics.classList.remove('hidden');
+        navAnalytics.className = "px-3 py-1 rounded-lg font-bold text-xs bg-white text-indigo-700 shadow";
+        navKiosk.className = "px-3 py-1 rounded-lg font-bold text-xs text-indigo-200 hover:text-white transition";
+        renderAnalytics();
+      }
+    };
+
+    function updateClockAndPeriod() {
+      const now = new Date();
+      document.getElementById("clock").textContent = now.toLocaleTimeString();
+
+      const day = now.getDay();
+      if (day === 0 || day === 6) {
+        document.getElementById("currentPeriodDisplay").textContent = "Weekend";
+        return;
+      }
+
+      const scheduleType = day === 5 ? SCHEDULE.fri : SCHEDULE.m_th;
+      const currentMins = now.getHours() * 60 + now.getMinutes();
+
+      let detected = null;
+      for (let slot of scheduleType) {
+        const [sH, sM] = slot.start.split(":").map(Number);
+        const [eH, eM] = slot.end.split(":").map(Number);
+        if (currentMins >= sH * 60 + sM && currentMins <= eH * 60 + eM) {
+          detected = slot.period;
+          break;
+        }
+      }
+
+      activePeriod = detected || 1;
+      document.getElementById("currentPeriodDisplay").textContent = detected ? `Period ${detected}` : "Passing / After Hours";
+    }
+
+    setInterval(() => {
+      updateClockAndPeriod();
+      renderActivePasses();
+    }, 1000);
+    updateClockAndPeriod();
+
+    function renderUI() {
+      renderActivePasses();
+      renderBlockRules();
+      renderRoster();
+      renderAnalytics();
     }
 
     function renderActivePasses() {
-      const container = document.getElementById('active-passes-list');
-      container.innerHTML = '';
-      const entries = Object.entries(state.activePasses);
+      const container = document.getElementById("activePassesList");
+      const activeKeys = Object.keys(liveData.passes || {});
+      document.getElementById("activePassCount").textContent = `${activeKeys.length} Active`;
 
-      if (entries.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 italic col-span-full">No students are currently out.</p>';
+      if (activeKeys.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-sm italic py-4 text-center">No students currently out in hallway.</p>`;
         return;
       }
 
       const now = Date.now();
-      entries.forEach(([name, timeOut]) => {
-        const elapsedSec = Math.floor((now - timeOut) / 1000);
-        const mins = Math.floor(elapsedSec / 60);
-        const secs = elapsedSec % 60;
-        const timeFormatted = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
-        // Color coding based on elapsed time
-        let bgStyle = "bg-emerald-50 border-emerald-200 text-emerald-900";
-        let badgeStyle = "bg-emerald-200 text-emerald-800";
-        if (mins >= 5) {
-          bgStyle = "bg-rose-50 border-rose-300 text-rose-900 animate-pulse";
-          badgeStyle = "bg-rose-200 text-rose-800";
-        } else if (mins >= 3) {
-          bgStyle = "bg-amber-50 border-amber-300 text-amber-900";
-          badgeStyle = "bg-amber-200 text-amber-800";
+      container.innerHTML = activeKeys.map(key => {
+        const p = liveData.passes[key];
+        const elapsedSec = Math.floor((now - p.time) / 1000);
+        const minsOut = Math.floor(elapsedSec / 60);
+        const secsOut = elapsedSec % 60;
+        const formattedTimer = `${String(minsOut).padStart(2, '0')}:${String(secsOut).padStart(2, '0')}`;
+        
+        let warningStyle = "bg-indigo-50 border-indigo-100";
+        let timerColor = "text-indigo-600";
+        if (minsOut >= 5) {
+          warningStyle = "bg-rose-50 border-rose-300 animate-pulse";
+          timerColor = "text-rose-700 font-bold";
+        } else if (minsOut >= 3) {
+          warningStyle = "bg-amber-50 border-amber-200";
+          timerColor = "text-amber-700 font-bold";
         }
 
-        const card = document.createElement('div');
-        card.className = `p-4 rounded-xl border flex justify-between items-center shadow-sm ${bgStyle}`;
-        card.innerHTML = `
-          <div>
-            <p class="font-bold text-base">${name}</p>
-            <p class="text-xs opacity-75 mt-0.5">Time Out: ${timeFormatted}</p>
+        return `
+          <div class="flex items-center justify-between p-3 border rounded-xl ${warningStyle}">
+            <div>
+              <p class="font-bold text-slate-900">${p.student}</p>
+              <p class="text-xs ${timerColor}">${p.teacher} • Period ${p.period} (${formattedTimer} out)</p>
+            </div>
+            <button data-action="return" data-pass-id="${key}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer">
+              Sign In
+            </button>
           </div>
-          <button onclick="signIn('${name}')" class="px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-md shadow hover:bg-slate-800 transition">
-            Sign In
-          </button>
         `;
-        container.appendChild(card);
-      });
+      }).join("");
     }
 
-    function renderAnalytics() {
-      const historyList = Object.values(state.history || {});
-      const tbody = document.getElementById('analytics-table-body');
-      tbody.innerHTML = '';
+    function renderBlockRules() {
+      const container = document.getElementById("blockRulesList");
+      const keys = Object.keys(liveData.blocks || {});
 
-      if (historyList.length === 0) {
-        document.getElementById('stat-total-trips').textContent = '0';
-        document.getElementById('stat-avg-time').textContent = '0m 0s';
-        document.getElementById('stat-total-time').textContent = '0m';
-        tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-slate-400 italic">No completed hall pass data yet.</td></tr>';
+      if (keys.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-xs italic">No block rules configured.</p>`;
         return;
       }
 
-      // Summary Stats
+      container.innerHTML = keys.map(key => {
+        const b = liveData.blocks[key];
+        return `
+          <div class="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+            <span class="font-medium text-slate-700">⛔ ${b.studentA} ↔ ${b.studentB}</span>
+            <button data-action="remove-block" data-block-id="${key}" class="text-rose-600 font-bold hover:underline cursor-pointer">Remove</button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderRoster() {
+      const tbody = document.getElementById("rosterTableBody");
+      const search = document.getElementById("searchRoster").value.toLowerCase();
+      const filterVal = document.getElementById("periodFilter").value;
+
+      let selectedPeriod;
+      if (filterVal === "auto") {
+        selectedPeriod = activePeriod;
+      } else if (filterVal === "all") {
+        selectedPeriod = "all";
+      } else {
+        selectedPeriod = parseInt(filterVal, 10);
+      }
+
+      let roster = MASTER_ROSTER[currentTeacher] || [];
+
+      if (selectedPeriod !== "all") {
+        roster = roster.filter(s => Number(s.period) === Number(selectedPeriod));
+      }
+
+      if (search) {
+        roster = roster.filter(s => s.name.toLowerCase().includes(search));
+      }
+
+      if (roster.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400 italic">No students found for Period ${selectedPeriod}.</td></tr>`;
+        return;
+      }
+
+      const activeOutNames = Object.values(liveData.passes || {}).map(p => p.student);
+
+      tbody.innerHTML = roster.map(s => {
+        const isOut = activeOutNames.includes(s.name);
+        
+        let blockedBy = null;
+        Object.values(liveData.blocks || {}).forEach(b => {
+          if (b.studentA === s.name && activeOutNames.includes(b.studentB)) blockedBy = b.studentB;
+          if (b.studentB === s.name && activeOutNames.includes(b.studentA)) blockedBy = b.studentA;
+        });
+
+        const passCountKey = `${currentTeacher}_${s.name}`;
+        const basePasses = 5;
+        const currentPasses = (liveData.adjustments || {})[passCountKey] !== undefined ? liveData.adjustments[passKey] : basePasses;
+
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-3 font-semibold text-slate-800">${s.name}</td>
+            <td class="py-3 px-3 text-slate-500">Period ${s.period}</td>
+            <td class="py-3 px-3 text-center">
+              <div class="flex items-center justify-center gap-2">
+                <span class="font-bold text-sm min-w-[20px]">${currentPasses}</span>
+                <button data-action="add-pass" data-student="${s.name}" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold text-xs px-2 py-1 rounded transition cursor-pointer" title="Award 1 Pass Back">+ Add Pass</button>
+              </div>
+            </td>
+            <td class="py-3 px-3 text-right">
+              ${isOut ? `
+                <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">Currently Out</span>
+              ` : blockedBy ? `
+                <span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-1 rounded-full font-bold" title="Blocked by ${blockedBy}">Blocked (${blockedBy})</span>
+              ` : `
+                <button data-action="sign-out" data-student="${s.name}" data-period="${s.period}" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition cursor-pointer">
+                  Sign Out
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderAnalytics() {
+      const historyList = Object.values(liveData.history || {});
+      const tbody = document.getElementById('analyticsTableBody');
+
+      if (historyList.length === 0) {
+        document.getElementById('statTotalTrips').textContent = '0';
+        document.getElementById('statAvgTime').textContent = '0m 0s';
+        document.getElementById('statTotalTime').textContent = '0m';
+        tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400 italic">No completed hall pass records yet.</td></tr>';
+        return;
+      }
+
       const totalTrips = historyList.length;
       const sumSeconds = historyList.reduce((acc, curr) => acc + (curr.durationSec || 0), 0);
       const avgSeconds = Math.round(sumSeconds / totalTrips);
 
-      document.getElementById('stat-total-trips').textContent = totalTrips;
-      document.getElementById('stat-avg-time').textContent = `${Math.floor(avgSeconds / 60)}m ${avgSeconds % 60}s`;
-      document.getElementById('stat-total-time').textContent = `${Math.round(sumSeconds / 60)}m`;
+      document.getElementById('statTotalTrips').textContent = totalTrips;
+      document.getElementById('statAvgTime').textContent = `${Math.floor(avgSeconds / 60)}m ${avgSeconds % 60}s`;
+      document.getElementById('statTotalTime').textContent = `${Math.round(sumSeconds / 60)}m`;
 
-      // Per-student stats
       const statsByStudent = {};
       historyList.forEach(h => {
-        if (!statsByStudent[h.student]) {
-          statsByStudent[h.student] = { trips: 0, totalSec: 0 };
+        const key = `${h.teacher}_${h.student}`;
+        if (!statsByStudent[key]) {
+          statsByStudent[key] = { student: h.student, teacher: h.teacher, period: h.period, trips: 0, totalSec: 0 };
         }
-        statsByStudent[h.student].trips++;
-        statsByStudent[h.student].totalSec += (h.durationSec || 0);
+        statsByStudent[key].trips++;
+        statsByStudent[key].totalSec += (h.durationSec || 0);
       });
 
-      Object.entries(statsByStudent).forEach(([student, data]) => {
+      tbody.innerHTML = Object.values(statsByStudent).map(data => {
         const studentAvgSec = Math.round(data.totalSec / data.trips);
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition";
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-slate-800">${student}</td>
-          <td class="py-3 px-4 font-medium text-slate-600">${data.trips}</td>
-          <td class="py-3 px-4 font-medium text-slate-600">${Math.floor(studentAvgSec / 60)}m ${studentAvgSec % 60}s</td>
-          <td class="py-3 px-4 font-bold text-right text-indigo-600">${Math.round(data.totalSec / 60)}m</td>
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-3 font-semibold text-slate-800">${data.student}</td>
+            <td class="py-3 px-3 text-slate-500">${data.teacher} • Period ${data.period}</td>
+            <td class="py-3 px-3 text-center font-medium text-slate-600">${data.trips}</td>
+            <td class="py-3 px-3 text-center font-medium text-slate-600">${Math.floor(studentAvgSec / 60)}m ${studentAvgSec % 60}s</td>
+            <td class="py-3 px-3 text-right font-bold text-indigo-600">${Math.round(data.totalSec / 60)}m</td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
+      }).join("");
     }
 
-    // --- 6. ACTIONS ---
-    function signOut(name) {
-      state.activePasses[name] = Date.now();
-      db.ref("hallpass_state/activePasses").set(state.activePasses);
-    }
+    // Event Delegation Handlers
+    document.getElementById("teacherSelect").addEventListener("change", (e) => {
+      currentTeacher = e.target.value;
+      renderRoster();
+    });
 
-    function signIn(name) {
-      const timeOut = state.activePasses[name];
-      if (timeOut) {
-        const durationSec = Math.max(1, Math.floor((Date.now() - timeOut) / 1000));
-        // Push record into history
-        db.ref("hallpass_state/history").push({
-          student: name,
-          durationSec: durationSec,
-          timestamp: Date.now()
-        });
-        delete state.activePasses[name];
-        db.ref("hallpass_state/activePasses").set(state.activePasses);
+    document.getElementById("periodFilter").addEventListener("change", renderRoster);
+    document.getElementById("searchRoster").addEventListener("input", renderRoster);
+
+    document.getElementById("addBlockForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const sA = document.getElementById("blockStudentA").value.trim();
+      const sB = document.getElementById("blockStudentB").value.trim();
+
+      if (sA && sB) {
+        const blockId = "block_" + Date.now();
+        if (!liveData.blocks) liveData.blocks = {};
+        liveData.blocks[blockId] = { studentA: sA, studentB: sB };
+        saveToCloud();
+
+        document.getElementById("blockStudentA").value = "";
+        document.getElementById("blockStudentB").value = "";
       }
-    }
+    });
 
-    // --- 7. TIMERS & CLOCK ---
-    setInterval(() => {
-      document.getElementById('current-time-display').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      renderActivePasses(); // Live clock update for active pass timers
-    }, 1000);
+    document.getElementById("blockRulesList").addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn.dataset.action === "remove-block") {
+        const blockId = btn.dataset.blockId;
+        if (liveData.blocks && liveData.blocks[blockId]) {
+          delete liveData.blocks[blockId];
+          saveToCloud();
+        }
+      }
+    });
 
-    // Initial load
-    renderPeriodButtons();
+    document.getElementById("activePassesList").addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      if (btn.dataset.action === "return") {
+        const passId = btn.dataset.passId;
+        const activePass = liveData.passes[passId];
+        
+        if (activePass) {
+          const durationSec = Math.max(1, Math.floor((Date.now() - activePass.time) / 1000));
+          const historyId = "hist_" + Date.now();
+          
+          if (!liveData.history) liveData.history = {};
+          liveData.history[historyId] = {
+            student: activePass.student,
+            teacher: activePass.teacher,
+            period: activePass.period,
+            durationSec: durationSec,
+            timestamp: Date.now()
+          };
+
+          delete liveData.passes[passId];
+          saveToCloud();
+        }
+      }
+    });
+
+    document.getElementById("rosterTableBody").addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const studentName = btn.dataset.student;
+      const period = btn.dataset.period;
+      const passKey = `${currentTeacher}_${studentName}`;
+
+      if (action === "sign-out") {
+        const currentPasses = (liveData.adjustments || {})[passKey] !== undefined ? liveData.adjustments[passKey] : 5;
+
+        if (currentPasses <= 0) {
+          alert(`${studentName} has no bathroom passes remaining!`);
+          return;
+        }
+
+        const passId = "pass_" + Date.now();
+        if (!liveData.passes) liveData.passes = {};
+        liveData.passes[passId] = {
+          student: studentName,
+          teacher: currentTeacher,
+          period: parseInt(period, 10),
+          time: Date.now()
+        };
+
+        if (!liveData.adjustments) liveData.adjustments = {};
+        liveData.adjustments[passKey] = currentPasses - 1;
+
+        saveToCloud();
+      }
+
+      if (action === "add-pass") {
+        const currentPasses = (liveData.adjustments || {})[passKey] !== undefined ? liveData.adjustments[passKey] : 5;
+        if (!liveData.adjustments) liveData.adjustments = {};
+        liveData.adjustments[passKey] = currentPasses + 1;
+
+        saveToCloud();
+      }
+    });
   </script>
 </body>
 </html>
